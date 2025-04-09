@@ -72,6 +72,25 @@ async function run() {
       const result = await foodCollection.findOne(query);
       res.send(result);
     });
+    app.put("/allFood/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          foodName: req.body.foodName,
+          foodImage: req.body.foodImage,
+          foodOrigin: req.body.foodOrigin,
+          foodCategory: req.body.foodCategory,
+          price: parseInt(req.body.price),
+          foodQuantity: parseInt(req.body.foodQuantity),
+          foodQuantityType: req.body.foodQuantityType,
+          description: req.body.description,
+        },
+      };
+
+      const result = await foodCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
     app.patch("/allFood/:id", async (req, res) => {
       const id = req.params.id;
       const { orderQuantity } = req.body;
