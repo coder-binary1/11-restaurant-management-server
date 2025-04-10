@@ -17,6 +17,20 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+  if (token) {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+      if (error) {
+        return res.status(401).send({ message: "Unauthorized Access" });
+      }
+      req.user = decoded;
+    });
+  }
+
+  next();
+};
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zfqrz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const client = new MongoClient(uri, {
   serverApi: {
@@ -49,17 +63,16 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
       });
-      console.log(token);
 
       res
         .cookie("token", token, { httpOnly: true, secure: false })
         .send({ success: true });
     });
 
-    app.get("/allFoods", async (req, res) => {
+    app.get("/allFoods", verifyToken, async (req, res) => {
       const limit = parseInt(req.query.limit);
       const from = req.query.from;
-      const user = req.query.user;
+      const email = req.query.email;
       const search = req.query.search;
 
       let sort;
@@ -68,8 +81,8 @@ async function run() {
       }
 
       let query;
-      if (user) {
-        query = { "addedBy.email": user };
+      if (email) {
+        query = { "addedBy.email": email };
       }
       if (search) {
         query = { foodName: { $regex: search, $options: "i" } };
@@ -136,9 +149,9 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/order", async (req, res) => {
-      const user = req.query.user;
-      const filter = { buyerEmail: user };
+    app.get("/order", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const filter = { buyerEmail: email };
       const result = await orderCollection.find(filter).toArray();
       res.send(result);
     });
