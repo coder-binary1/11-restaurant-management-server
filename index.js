@@ -10,7 +10,12 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://restaurant-management-ac40f.web.app",
+      "https://restaurant-management-ac40f.firebaseapp.com",
+      "https://grillix.airnet.com.bd",
+    ],
     credentials: true,
   })
 );
@@ -65,12 +70,17 @@ async function run() {
       });
 
       res
-        .cookie("token", token, { httpOnly: true, secure: false })
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
         .send({ success: true });
     });
 
     app.get("/allFoods", verifyToken, async (req, res) => {
       const limit = parseInt(req.query.limit);
+      const page = parseInt(req.query.page);
       const from = req.query.from;
       const email = req.query.email;
       const search = req.query.search;
@@ -95,6 +105,7 @@ async function run() {
       const result = await foodCollection
         .find(query)
         .sort(sort)
+        .skip(limit * page)
         .limit(limit)
         .toArray();
       res.send(result);
@@ -145,6 +156,11 @@ async function run() {
       };
 
       const result = await foodCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    app.get("/foodCount", async (req, res) => {
+      const result = await foodCollection.estimatedDocumentCount();
       res.send(result);
     });
 
