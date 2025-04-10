@@ -82,7 +82,11 @@ async function run() {
 
       let query;
       if (email) {
-        query = { "addedBy.email": email };
+        if (req.user.email !== email) {
+          return res.status(403).send({ message: "Forbidden Access" });
+        } else {
+          query = { "addedBy.email": email };
+        }
       }
       if (search) {
         query = { foodName: { $regex: search, $options: "i" } };
@@ -151,6 +155,9 @@ async function run() {
 
     app.get("/order", verifyToken, async (req, res) => {
       const email = req.query.email;
+      if (email !== req.user.email) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
       const filter = { buyerEmail: email };
       const result = await orderCollection.find(filter).toArray();
       res.send(result);
