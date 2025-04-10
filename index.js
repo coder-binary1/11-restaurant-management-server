@@ -40,6 +40,7 @@ async function run() {
       const limit = parseInt(req.query.limit);
       const from = req.query.from;
       const user = req.query.user;
+      const search = req.query.search;
 
       let sort;
       if (from) {
@@ -49,6 +50,9 @@ async function run() {
       let query;
       if (user) {
         query = { "addedBy.email": user };
+      }
+      if (search) {
+        query = { foodName: { $regex: search, $options: "i" } };
       }
 
       const result = await foodCollection
