@@ -118,7 +118,8 @@ async function run() {
 
     app.get("/order", async (req, res) => {
       const user = req.query.user;
-      const result = await orderCollection.find().toArray();
+      const filter = { buyerEmail: user };
+      const result = await orderCollection.find(filter).toArray();
       res.send(result);
     });
     app.post("/order", async (req, res) => {
